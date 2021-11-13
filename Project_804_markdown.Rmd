@@ -1,0 +1,580 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
+# IS-804 Project Report - Energy Efficient Data
+## Introduction
+The report intends to present all the statistical learning concepts introduced in the text book. The report is presented for a dataset named 'Energy Efficient'. This dataset is collected from UCI website. There are two predicting parameter in the dataset i.e. Heating and cooling load while there are 8 predictor variables. This report will present regression technique to predict the output variables. The data can be found in following link.
+https://archive.ics.uci.edu/ml/datasets/Energy+efficiency
+
+FIrst load dataset 
+
+## Chapter 2
+
+#### Loading Data
+```{r}
+
+library(readxl)
+energy <- read_excel("F:/Spring 2018/quantitative methods/Project/Data/energy.xlsx")
+#View(energy)
+#fix(energy)
+dim(energy)
+names(energy)
+summary(energy)
+attach(energy)
+
+```
+
+#### Additional Graphical and Numerical Summaries
+Following figures shows how the output variables changes with respect to different input variables.
+```{r}
+plot(surface_area, heating_load,xlab='surface area', ylab='heating load')
+plot(glazing_area, heating_load,xlab='glazing area', ylab='heating load')
+plot(overall_height, heating_load,xlab='overall_height', ylab='heating load')
+plot(relative_compactness, heating_load, xlab='relative _compactness', ylab='heating load')
+plot(wall_area, heating_load,xlab='wall area', ylab='heating load')
+plot(roof_area, heating_load,xlab='roof area', ylab='heating load')
+plot(glazing_area_distribution, heating_load,xlab='glazing_area_distribution', ylab='heating load')
+plot(orientation, heating_load,xlab='orientation', ylab='heating load')
+plot(heating_load,cooling_load,xlab='heating load', ylab='cooling load')
+```
+
+From the above figures, following observations can be made:
+
+* 1.* surface area with less than 650 results in higher heating load.
+* 2.* with increasing glazing area and overall height, heating load increases.
+* 3.* The relaship of heating load with relative compactness, wall area, roof area is changing randomly.
+* 4.* For all orientations and glazing area distribution, heating load is almost same.
+* 5.* Two output variables i.e. hetaing and cooling load are linearly correlated with each other.
+
+As heating and cooling load are almost similar therefore, most of the codes are used just to predict heating load.
+#### Representing variables with qualitative values
+Eight quantitative input variables are represented as qualititative variables.
+
+```{r}
+qual_glazing_area=as.factor(glazing_area)
+qual_orientation=as.factor(orientation)
+qual_wall_area= as.factor(wall_area)
+qual_surface_area=as.factor(surface_area)
+qual_roof_area=as.factor(roof_area)
+qual_overall_height=as.factor(overall_height)
+qual_relative_compactness=as.factor(relative_compactness)
+
+plot(qual_glazing_area, heating_load, col="red", varwidth=T, xlab='glazing area', ylab='heating load')
+plot(qual_glazing_area, cooling_load, col="green", varwidth=T, xlab='glazing area', ylab='cooling load')
+
+plot(qual_orientation, heating_load, col="red", varwidth=T, xlab='orientation', ylab='heating load')
+plot(qual_orientation, cooling_load, col="green", varwidth=T, xlab='orientation', ylab='cooling load')
+
+plot(qual_wall_area, heating_load, col="red", varwidth=T, xlab='Wall area', ylab='heating load')
+plot(qual_wall_area, cooling_load, col="green", varwidth=T, xlab='wall area', ylab='cooling load')
+
+plot(qual_surface_area, heating_load, col="red", varwidth=T, xlab='Surface area', ylab='heating load')
+plot(qual_surface_area, cooling_load, col="green", varwidth=T, xlab='surface area', ylab='cooling load')
+
+plot(relative_compactness, heating_load, col="red", varwidth=T, xlab='relative compactness', ylab='heating load')
+plot(relative_compactness, cooling_load, col="green", varwidth=T, xlab='relative compactness', ylab='cooling load')
+
+```
+
+Above observations are obvious from the figures.
+
+#### Histogram
+Histograms shows the heating and cooling load distribution in the dataset.
+```{r}
+hist(heating_load,col="red",breaks=15)
+hist(cooling_load,col="green",breaks=15)
+
+```
+
+#### Scatter plot matrix
+
+```{r}
+pairs(energy) #pairs() function creates a scatterplot matrix 
+pairs(~ heating_load + surface_area + wall_area + roof_area + relative_compactness, energy)
+pairs(~ cooling_load + surface_area + wall_area + roof_area + relative_compactness, energy)
+pairs(~ heating_load + orientation + glazing_area, energy)
+pairs(~ cooling_load + orientation + glazing_area, energy)
+```
+#### Co-Relation 
+
+```{r}
+cor(energy)
+```
+
+#### summary of output variables
+```{r}
+summary (heating_load)
+summary(cooling_load)
+```
+
+
+### Chapter 3
+
+#### Linear regression
+linear regression is applied with all the input variables.
+```{r}
+lm.fit=lm(heating_load~relative_compactness+ surface_area + wall_area + orientation + roof_area + overall_height + glazing_area+ glazing_area_distribution,data=energy)
+lm.fit
+summary(lm.fit)
+names(lm.fit)
+coef(lm.fit)
+confint(lm.fit) # confidence interval for the coefficient estimates
+
+```
+
+Above model provides good $R^2$ value and p-value is less than $0.1$ .
+If we exclude the surface area and overall height, following regression model is obtained.
+
+```{r}
+lm.fit2=lm(heating_load~relative_compactness+  wall_area + orientation + roof_area + glazing_area+ glazing_area_distribution,data=energy)
+lm.fit2
+summary(lm.fit2)
+names(lm.fit2)
+coef(lm.fit2)
+confint(lm.fit2)
+```
+
+Second model provides lower $R^2$ value.
+
+#### Residual plots
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit)
+abline(lm.fit,lwd=5,col="red" )
+plot(predict(lm.fit), residuals(lm.fit))
+plot(predict(lm.fit), rstudent(lm.fit))
+```
+
+There might be some evidence of heteroscedasticity as it appears a funnel shape in residual vs. fitted value plot. After transforming the output variables with taking logarithm.
+
+```{r}
+lm.fit=lm(log(heating_load)~relative_compactness+ surface_area + wall_area + orientation + roof_area + overall_height + glazing_area+ glazing_area_distribution,data=energy)
+lm.fit
+summary(lm.fit)
+names(lm.fit)
+coef(lm.fit)
+confint(lm.fit)
+```
+
+Now the residual plot is as follows:
+
+```{r}
+par(mfrow=c(2,2))
+plot(lm.fit)
+abline(lm.fit,lwd=5,col="red" )
+plot(predict(lm.fit), residuals(lm.fit))
+plot(predict(lm.fit), rstudent(lm.fit))
+```
+
+After transforming the funnel shape is removed and no evidence of heteroscedasticity is found.
+
+#### Leverage statistics
+
+Leverage statistics can be computed for any number of predictors using the hatvalues() function.
+
+```{r}
+plot(hatvalues(lm.fit)) 
+
+```
+
+To get the observation with maximum leverage statistics, following code can be used.
+
+```{r}
+which.max(hatvalues(lm.fit))
+
+```
+
+#### Multiple Linear Regression
+
+To see how the heating and cooling load differs for the entire volume of the buildings, following model is built.
+
+```{r}
+lm.fit3=lm((heating_load) ~ surface_area * overall_height ,data=energy)
+summary(lm.fit3)
+
+```
+
+```{r}
+lm.fit4=lm(cooling_load ~ surface_area * overall_height ,data=energy)
+summary(lm.fit4)
+```
+
+Now including other variables in multiple regression in following section.
+
+```{r}
+lm.fit3=lm((heating_load) ~ (surface_area * overall_height) + wall_area + orientation + roof_area + glazing_area+ glazing_area_distribution,data=energy)
+summary(lm.fit3)
+
+```
+
+```{r}
+lm.fit4=lm((cooling_load) ~ (surface_area * overall_height) + relative_compactness+ wall_area + orientation + roof_area + glazing_area+ glazing_area_distribution,data=energy)
+summary(lm.fit4)
+```
+
+Now with the transformed output variable following models are built.
+```{r}
+lm.fit3=lm((heating_load) ~ (surface_area * overall_height) + relative_compactness+wall_area + orientation + roof_area + glazing_area+ glazing_area_distribution,data=energy)
+summary(lm.fit3)
+```
+
+
+```{r}
+lm.fit4=lm(log(cooling_load) ~ (surface_area * overall_height) + relative_compactness+wall_area + orientation + roof_area + glazing_area+ glazing_area_distribution,data=energy)
+summary(lm.fit4)
+```
+
+$R^2$ value has been increased.
+
+
+### Chapter 4
+
+Here K-NN classification is applied on the dataset though the problem is not a classification problem
+```{r}
+library(class)
+train=(glazing_area>0)
+energy.train=energy[train,]
+energy.test=energy[!train,]
+hload.train=heating_load[train]
+hload.test=heating_load[!train]
+dim(energy.train)
+dim(energy.test)
+
+```
+
+```{r}
+energy.train=cbind(surface_area, orientation, overall_height, glazing_area)[train,]
+energy.test=cbind(surface_area, orientation, overall_height, glazing_area)[!train,]
+set.seed(1)
+knn.pred=knn(energy.train,energy.test,hload.train,k=1)
+mean(knn.pred==hload.test)
+```
+
+The output doesn't give any satisfactory result here.
+
+### Chapter 5
+
+Different types of resampling technique is applied in this section.
+
+```{r}
+library(ISLR)
+library(boot)
+```
+
+#### Validation Set Approach
+
+```{r}
+set.seed(1)
+train=sample(576,192)
+lm.fit5=lm(heating_load~surface_area,data=energy,subset=train)
+mean((heating_load-predict(lm.fit5,energy))[-train]^2)
+
+```
+
+
+```{r}
+lm.fit6=lm(heating_load~ poly(surface_area,overall_height),data=energy,subset=train)
+mean((heating_load-predict(lm.fit6,energy))[-train]^2)
+```
+
+```{r}
+lm.fit7=lm(heating_load~ poly(surface_area,overall_height, wall_area, relative_compactness, glazing_area),data=energy,subset=train)
+mean((heating_load-predict(lm.fit7,energy))[-train]^2)
+```
+
+#### Leave-One-Out Cross-Validation
+```{r}
+glm.fit=glm(heating_load~surface_area,data=energy)
+coef(glm.fit)
+
+lm.fit=lm(heating_load~surface_area,data=energy)
+coef(lm.fit)
+```
+
+```{r}
+cv.err=cv.glm(energy,glm.fit)
+cv.err$delta
+cv.error=rep(0,5)
+for (i in 1:5){
+     glm.fit=glm(heating_load~poly(surface_area,i),data=energy)
+
+ }
+cv.error
+```
+#### k-Fold Cross-Validation
+
+```{r}
+set.seed(17)
+cv.error.10=rep(0,10)
+for (i in 1:10){
+ glm.fit=glm(heating_load~poly(surface_area,i),data=energy)
+ cv.error.10[i]=cv.glm(energy,glm.fit,K=10)$delta[1]
+}
+
+cv.error.10
+```
+
+#### The Bootstrap
+```{r}
+alpha.fn=function(data,index){
+ X=data$surface_area[index]
+ Y=data$heating_load[index]
+ return((var(Y)-cov(X,Y))/(var(X)+var(Y)-2*cov(X,Y)))
+ }
+alpha.fn(energy,1:100)
+set.seed(1)
+alpha.fn(energy,sample(100,100,replace=T))
+boot(energy,alpha.fn,R=1000)
+```
+#### Estimating the Accuracy of a Linear Regression Model
+
+```{r}
+boot.fn=function(data,index)
+ return(coef(lm(heating_load~surface_area,data=energy,subset=index)))
+
+boot.fn(energy,1:576)
+
+set.seed(1)
+boot.fn(energy,sample(350,350,replace=T))
+
+boot(energy,boot.fn,1000)
+summary(lm(heating_load~surface_area,data=energy))$coef
+
+boot.fn=function(data,index)
+ coefficients(lm(heating_load~surface_area+I(overall_height* surface_area),data=energy,subset=index))
+
+set.seed(1)
+boot(energy,boot.fn,1000)
+summary(lm(heating_load~surface_area+I(overall_height* surface_area),data=energy))$coef
+
+```
+
+### Chapter 6
+
+
+Necessary libraries for this section are included.
+```{r}
+library(ISLR)
+library(leaps)
+library(pls)
+library(glmnet)
+```
+
+#### Forward and Backward Stepwise Selection
+
+```{r}
+regfit.full=regsubsets(heating_load~.,data=energy-cooling_load)
+regfit.fwd=regsubsets(heating_load~.,data=energy-cooling_load,nvmax=19,method="forward")
+summary(regfit.fwd)
+
+regfit.bwd=regsubsets(heating_load~.,data=energy-cooling_load,nvmax=19,method="backward")
+summary(regfit.bwd)
+coef(regfit.full,7)
+coef(regfit.fwd,7)
+coef(regfit.bwd,7)
+
+```
+
+#### Ridge Regression
+
+```{r}
+x=model.matrix(heating_load~.-cooling_load,energy)[,-1]
+y=energy$heating_load
+train=sample(1:nrow(x), nrow(x)/2)
+test=(-train)
+y.test=y[test]
+
+grid=10^seq(10,-2,length=100)
+ridge.mod=glmnet(x,y,alpha=0,lambda=grid)
+dim(coef(ridge.mod))
+ridge.mod$lambda[50]
+coef(ridge.mod)[,50]
+sqrt(sum(coef(ridge.mod)[-1,50]^2))
+ridge.mod$lambda[60]
+coef(ridge.mod)[,60]
+sqrt(sum(coef(ridge.mod)[-1,60]^2))
+predict(ridge.mod,s=50,type="coefficients")[1:7,]
+```
+
+#### The Lasso
+
+```{r}
+lasso.mod=glmnet(x[train,],y[train],alpha=1,lambda=grid)
+plot(lasso.mod)
+set.seed(1)
+cv.out=cv.glmnet(x[train,],y[train],alpha=1)
+plot(cv.out)
+bestlam=cv.out$lambda.min
+lasso.pred=predict(lasso.mod,s=bestlam,newx=x[test,])
+mean((lasso.pred-y.test)^2)
+out=glmnet(x,y,alpha=1,lambda=grid)
+lasso.coef=predict(out,type="coefficients",s=bestlam)[1:7,]
+lasso.coef
+lasso.coef[lasso.coef!=0]
+```
+
+#### Partial Least Squares
+```{r}
+set.seed(1)
+pls.fit=plsr(heating_load~.-cooling_load, data=energy,subset=train,scale=TRUE, validation="CV")
+summary(pls.fit)
+validationplot(pls.fit,val.type="MSEP")
+```
+
+```{r}
+pls.pred=predict(pls.fit,energy[!train,],ncomp=2)
+mean((pls.pred-heating_load[!train])^2)
+summary(pls.fit)
+```
+
+#### Principal Components Regression
+
+```{r}
+set.seed(2)
+pcr.fit=pcr(heating_load~.-cooling_load, data=energy,scale=TRUE,validation="CV")
+summary(pcr.fit)
+validationplot(pcr.fit,val.type="MSEP")
+```
+
+```{r}
+set.seed(1)
+energy.train=energy[train,]
+energy.test=energy[!train,]
+hload.train=heating_load[train]
+hload.test=heating_load[!train]
+
+pcr.fit=pcr(heating_load~.-cooling_load, data=energy, subset=train,scale=TRUE, validation="CV")
+validationplot(pcr.fit,val.type="MSEP")
+
+
+```
+
+### Chapter 7
+```{r}
+
+fit=lm(heating_load~poly(surface_area,4),data=energy)
+coef(summary(fit))
+
+fit2=lm(heating_load~poly(surface_area,4,raw=T),data=energy)
+coef(summary(fit2))
+
+fit2a=lm(heating_load~surface_area+I(overall_height*wall_area)+I(roof_area*orientation)+I(glazing_area*orientation),data=energy)
+coef(fit2a)
+
+fit2b=lm(heating_load~cbind(surface_area,overall_height,wall_area,orientation),data=energy)
+surfacelims=range(surface_area)
+surface.grid=seq(from=surfacelims[1],to=surfacelims[2])
+preds=predict(fit,newdata=list(surface=surface.grid),se=TRUE)
+```
+
+```{r}
+se.bands=cbind(preds$fit+2*preds$se.fit,preds$fit-2*preds$se.fit)
+max(se.bands)
+```
+```{r}
+
+anova(fit,fit2,fit2a,fit2b)
+coef(summary(fit2b))
+```
+
+
+### Chapter 8
+
+#### Fitting Regression Trees
+```{r}
+
+
+library(MASS)
+library(tree)
+set.seed(1)
+train = sample(1:nrow(energy), nrow(energy)/2)
+tree.energy=tree(heating_load~.-cooling_load, data=energy,subset=train)
+summary(tree.energy)
+plot(tree.energy)
+text(tree.energy,pretty=0)
+cv.energy=cv.tree(tree.energy)
+plot(cv.energy$size,cv.energy$dev,type='b')
+
+#pruning
+prune.energy=prune.tree(tree.energy,best=5)
+plot(prune.energy)
+text(prune.energy,pretty=0)
+yhat=predict(tree.energy,newdata=energy[-train,])
+energy.test=energy[-train,"heating_load"]
+abline(0,1)
+mean((yhat-energy.test)^2)
+```
+
+#### Random Forest
+```{r}
+library(randomForest)
+set.seed(1)
+bag.energy=randomForest(heating_load~.-cooling_load, data=energy,subset=train,mtry=8,importance=TRUE)
+bag.energy
+yhat.bag = predict(bag.energy,newdata=energy[-train,])
+mean((yhat.bag-energy.test)^2)
+```
+
+```{r}
+bag.energy=randomForest(heating_load~.-cooling_load, data=energy,subset=train,mtry=8,ntree=15)
+yhat.bag = predict(bag.energy,newdata=energy[-train,])
+mean((yhat.bag-energy.test)^2)
+```
+
+```{r}
+set.seed(1)
+rf.energy=randomForest(heating_load~.-cooling_load, data=energy,subset=train,mtry=5,importance=TRUE)
+yhat.rf = predict(rf.energy,newdata=energy[-train,])
+mean((yhat.rf-energy.test)^2)
+importance(rf.energy)
+varImpPlot(rf.energy)
+```
+
+#### Boosting
+```{r}
+library(gbm)
+set.seed(1)
+boost.energy=gbm(heating_load~.-cooling_load,data=energy[train,],distribution="gaussian",n.trees=5000,interaction.depth=4)
+summary(boost.energy)
+```
+
+```{r}
+yhat.boost=predict(boost.energy,newdata=energy[-train,],n.trees=5000)
+mean((yhat.boost-energy.test)^2)
+boost.energy=gbm(heating_load~.-cooling_load,data=energy[train,],distribution="gaussian",n.trees=5000,interaction.depth=4,shrinkage=0.2,verbose=F)
+yhat.boost=predict(boost.energy,newdata=energy[-train,],n.trees=5000)
+mean((yhat.boost-energy.test)^2)
+```
+
+
+### Chapter 9
+
+# Support Vector Machine
+```{r}
+library(e1071)
+set.seed(1)
+energy <- read_excel("F:/Spring 2018/quantitative methods/Project/Data/energy.xlsx")
+x=matrix(rnorm(surface_area*overall_height), ncol=2)
+x[1:100,]=x[1:100,]+2
+x[101:150,]=x[101:150,]-2
+y=c(heating_load)
+dat=data.frame(x=x,y=as.factor(y))
+
+plot(x, col=y)
+train=sample(200,100)
+svmfit=svm(y~., data=dat[train,], kernel="radial",  gamma=1, cost=1)
+plot(svmfit, dat[train,])
+summary(svmfit)
+```
+
+
+```{r}
+svmfit=svm(y~., data=dat[train,], kernel="radial",gamma=1,cost=1e5)
+plot(svmfit,dat[train,])
+set.seed(1)
+tune.out=tune(svm, y~., data=dat[train,], kernel="radial", ranges=list(cost=c(0.1,1,10,100,1000),gamma=c(0.5,1,2,3,4)))
+summary(tune.out)
+#table(true=dat[-train,"y"], pred=predict(tune.out$best.model,newdata=dat[-train,]))
+```
